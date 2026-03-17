@@ -1,0 +1,5 @@
+{
+  "name": "Fichat",
+  "description": "A modern real-time chat application prototype for a SaaS product.",
+  "requestFramePermissions": ["microphone"]
+}
