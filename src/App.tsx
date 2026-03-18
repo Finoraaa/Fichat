@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MoreVertical, MessageSquare, ArrowLeft, Send, UserPlus, Check, CheckCheck, LogOut, User, X, Camera, Paperclip, Loader2, Instagram, Github, Globe, Settings, Volume2, Trash2, Pencil, Mic, Square, Play, Pause, Bell, UserCheck, UserX, Users, UserMinus, ShieldAlert, Eye, VolumeX, Eraser, MoreHorizontal, Info, AlertCircle } from 'lucide-react';
+import { Search, MoreVertical, MessageSquare, ArrowLeft, Send, UserPlus, Check, CheckCheck, LogOut, User, X, Camera, Paperclip, Loader2, Instagram, Github, Globe, Settings, Volume2, Trash2, Pencil, Mic, Square, Play, Pause, Bell, UserCheck, UserX, Users, UserMinus, ShieldAlert, Eye, VolumeX, Eraser, MoreHorizontal, Info, AlertCircle, Image as ImageIcon, FileText as FileIcon, ExternalLink, ChevronRight, Download, Link as LinkIcon, ChevronDown, CornerUpLeft } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { BetaBanner } from './components/BetaBanner';
 import { ReportModal } from './components/ReportModal';
@@ -18,6 +18,9 @@ function VoiceMessage({ url }: { url: string }) {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Pseudo-random but deterministic waveform data
+  const waveformData = useRef(Array.from({ length: 25 }, () => Math.random() * 100));
 
   useEffect(() => {
     const audio = new Audio(url);
@@ -60,23 +63,43 @@ function VoiceMessage({ url }: { url: string }) {
   };
 
   return (
-    <div className="flex items-center gap-3 bg-white/10 p-2 rounded-xl min-w-[220px]">
+    <div className="flex items-center gap-3 bg-zinc-900/40 p-2.5 rounded-2xl min-w-[240px] border border-white/5 backdrop-blur-sm shadow-inner group/voice">
       <button 
         onClick={togglePlay}
-        className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all shrink-0"
+        className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0070F3] to-blue-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 shadow-lg shadow-blue-500/20"
       >
-        {isPlaying ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" className="ml-1" />}
+        {isPlaying ? <Pause size={18} fill="white" className="text-white" /> : <Play size={18} fill="white" className="ml-0.5 text-white" />}
       </button>
-      <div className="flex-1">
-        <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-white transition-all duration-100" 
-            style={{ width: `${progress}%` }}
-          />
+      
+      <div className="flex-1 overflow-hidden">
+        <div className="flex items-center gap-[2px] h-8 relative cursor-pointer group/wave" onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const pct = x / rect.width;
+          if (audioRef.current && duration) {
+            audioRef.current.currentTime = pct * duration;
+            setProgress(pct * 100);
+          }
+        }}>
+          {waveformData.current.map((height, i) => {
+            const barProgress = (i / waveformData.current.length) * 100;
+            const isActive = progress > barProgress;
+            return (
+              <div 
+                key={i} 
+                className={`flex-1 rounded-full transition-all duration-300 ${isActive ? 'bg-[#0070F3] shadow-[0_0_8px_rgba(0,112,243,0.5)]' : 'bg-zinc-700'}`}
+                style={{ 
+                  height: `${20 + height * 0.6}%`,
+                  opacity: isActive ? 1 : 0.4
+                }}
+              />
+            );
+          })}
         </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-[10px] opacity-70">{formatTime(audioRef.current?.currentTime || 0)}</span>
-          <span className="text-[10px] opacity-70">{formatTime(duration)}</span>
+        
+        <div className="flex justify-between mt-1 text-[10px] font-medium tracking-tight">
+          <span className="text-blue-400/80">{formatTime(audioRef.current?.currentTime || 0)}</span>
+          <span className="text-zinc-500">{formatTime(duration)}</span>
         </div>
       </div>
     </div>
@@ -88,17 +111,18 @@ function Landing({ onStart, session }: { onStart: () => void, session: any }) {
   return (
     <div className="min-h-[100dvh] bg-[#050505] text-white font-sans selection:bg-blue-500/30 overflow-x-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0070F3] to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <MessageSquare size={22} className="text-white" />
+      <nav className="fixed top-[calc(2.5rem+env(safe-area-inset-top))] md:top-10 left-0 right-0 z-50 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 md:gap-3">
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#0070F3] to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <MessageSquare size={20} className="text-white md:hidden" />
+              <MessageSquare size={22} className="text-white hidden md:block" />
             </div>
-            <span className="text-xl font-bold tracking-tight">Finora</span>
+            <span className="text-lg md:text-xl font-bold tracking-tight">Finora</span>
           </div>
           <button 
             onClick={onStart}
-            className="px-6 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-200 transition-all active:scale-95"
+            className="px-5 md:px-6 py-2 md:py-2.5 bg-white text-black text-xs md:text-sm font-bold rounded-full hover:bg-zinc-200 transition-all active:scale-95"
           >
             {session ? 'Mesajlara Git' : 'Giriş Yap'}
           </button>
@@ -106,7 +130,7 @@ function Landing({ onStart, session }: { onStart: () => void, session: any }) {
       </nav>
 
       {/* Hero Section */}
-      <main className="relative pt-32 pb-20 px-6">
+      <main className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-6">
         {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[500px] bg-blue-600/10 blur-[120px] -z-10 rounded-full" />
         
@@ -116,11 +140,11 @@ function Landing({ onStart, session }: { onStart: () => void, session: any }) {
             <span className="text-xs font-medium text-zinc-400 uppercase tracking-widest">Yeni Nesil Mesajlaşma</span>
           </div>
           
-          <h1 className="text-5xl md:text-8xl font-bold tracking-tighter mb-8 bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent leading-[1.1]">
-            Mesajlaşmanın <br /> En Saf Hali.
+          <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold tracking-tighter mb-6 md:mb-8 bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent leading-[1.2] md:leading-[1.1]">
+            Mesajlaşmanın <br className="hidden sm:block" /> En Saf Hali.
           </h1>
           
-          <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+          <p className="text-zinc-400 text-base md:text-xl max-w-2xl mx-auto mb-10 md:mb-12 leading-relaxed">
             Finora, hız ve güvenliği minimalist bir tasarımla buluşturuyor. 
             Karmaşadan uzak, sadece iletişime odaklanan premium bir deneyim.
           </p>
@@ -264,8 +288,8 @@ function Auth() {
   };
 
   return (
-    <div className="flex h-[100dvh] items-center justify-center bg-[#050505] font-sans tracking-tight text-white p-4">
-      <div className="w-full max-w-md bg-white/5 backdrop-blur-md border border-zinc-800/50 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8">
+    <div className="flex h-[100dvh] items-center justify-center bg-[#050505] font-sans tracking-tight text-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md bg-white/5 backdrop-blur-md border border-zinc-800/50 rounded-3xl shadow-2xl overflow-hidden p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-[#0070F3] to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
             <MessageSquare size={32} className="text-white" />
@@ -412,11 +436,22 @@ function Dashboard({ session }: { session: any }) {
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showChatSearch, setShowChatSearch] = useState(false);
+  const [showMediaVault, setShowMediaVault] = useState(false);
+  const [vaultTab, setVaultTab] = useState<'media' | 'files' | 'links'>('media');
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [showSidebarMore, setShowSidebarMore] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<any | null>(null);
+  const [activeMessageActionsId, setActiveMessageActionsId] = useState<string | null>(null);
 
   // Friendship State
   const [friendships, setFriendships] = useState<any[]>([]);
+
+  // Clear reply/actions on contact change
+  useEffect(() => {
+    setReplyToMessage(null);
+    setActiveMessageActionsId(null);
+  }, [activeContact?.id]);
   const [showRequests, setShowRequests] = useState(false);
   const [viewMode, setViewMode] = useState<'chat' | 'friends'>('chat');
   const [friendsTab, setFriendsTab] = useState<'myFriends' | 'requests' | 'find'>('myFriends');
@@ -893,7 +928,7 @@ function Dashboard({ session }: { session: any }) {
         .from('chat_media')
         .getPublicUrl(filePath);
 
-      const msgData = {
+      const msgData: any = {
         sender_id: currentUser.id,
         receiver_id: activeContact.id,
         content: '',
@@ -901,8 +936,16 @@ function Dashboard({ session }: { session: any }) {
         file_type: fileType
       };
 
+      if (replyToMessage) {
+        msgData.content = JSON.stringify({
+          reply_to: replyToMessage.id,
+          content: ''
+        });
+      }
+
       const { error: dbError } = await supabase.from('messages').insert([msgData]);
       if (dbError) throw dbError;
+      setReplyToMessage(null);
 
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -967,14 +1010,23 @@ function Dashboard({ session }: { session: any }) {
         setEditingMessage(null);
       } else {
         // INSERT MODE
+        let finalContent = content;
+        if (replyToMessage) {
+          finalContent = JSON.stringify({
+            reply_to: replyToMessage.id,
+            content: content
+          });
+        }
+
         const msgData = {
           sender_id: currentUser.id,
           receiver_id: activeContact.id,
-          content: content
+          content: finalContent
         };
 
         const { error } = await supabase.from('messages').insert([msgData]);
         if (error) throw error;
+        setReplyToMessage(null);
       }
     } catch (err) {
       console.error("Mesaj gönderilirken/güncellenirken hata oluştu:", err);
@@ -1056,7 +1108,7 @@ function Dashboard({ session }: { session: any }) {
         .from('chat_media')
         .getPublicUrl(filePath);
 
-      const msgData = {
+      const msgData: any = {
         sender_id: currentUser.id,
         receiver_id: activeContact.id,
         content: '',
@@ -1064,8 +1116,16 @@ function Dashboard({ session }: { session: any }) {
         file_type: 'audio'
       };
 
+      if (replyToMessage) {
+        msgData.content = JSON.stringify({
+          reply_to: replyToMessage.id,
+          content: ''
+        });
+      }
+
       const { error: dbError } = await supabase.from('messages').insert([msgData]);
       if (dbError) throw dbError;
+      setReplyToMessage(null);
     } catch (err: any) {
       console.error('Audio upload error:', err);
       alert(`Ses dosyası yüklenirken bir hata oluştu: ${err.message}`);
@@ -1155,7 +1215,7 @@ function Dashboard({ session }: { session: any }) {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .or(`email.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
+          .eq('email', searchQuery)
           .neq('id', currentUser.id)
           .limit(5);
 
@@ -1248,7 +1308,7 @@ function Dashboard({ session }: { session: any }) {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-[#050505] text-white font-sans tracking-tight overflow-hidden">
+    <div className="flex flex-1 bg-[#050505] text-white font-sans tracking-tight overflow-hidden">
       
       {/* PROFILE EDIT MODAL */}
       {showProfileModal && (
@@ -1381,10 +1441,10 @@ function Dashboard({ session }: { session: any }) {
       )}
 
       {/* LEFT SIDEBAR */}
-      <div className={`w-full md:w-[380px] lg:w-[420px] flex-col bg-white/5 backdrop-blur-md border-r border-zinc-800/50 z-10 ${activeContact ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[380px] lg:w-[420px] flex-col bg-white/5 backdrop-blur-md border-r border-zinc-800/50 z-10 transition-all duration-300 ${activeContact || viewMode === 'friends' ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Sidebar Header */}
-        <div className="h-16 md:h-20 flex items-center justify-between px-4 md:px-6 border-b border-zinc-800/50 shrink-0">
+        <div className="h-14 md:h-20 flex items-center justify-between px-4 md:px-6 border-b border-zinc-800/50 shrink-0 pt-[env(safe-area-inset-top)] md:pt-0 pb-[0.5rem] md:pb-0">
           <div 
             className="flex items-center gap-3 md:gap-4 cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-2xl transition-all active:scale-95"
             onClick={() => setShowProfileModal(true)}
@@ -1399,13 +1459,21 @@ function Dashboard({ session }: { session: any }) {
             )}
             <span className="font-semibold text-zinc-100 truncate max-w-[140px]">{profile?.full_name || currentUser.email}</span>
           </div>
-          <div className="flex items-center gap-1 text-zinc-400">
+          <div className="flex items-center gap-1 text-zinc-300">
+            <button 
+              onClick={() => setShowAddContact(!showAddContact)} 
+              className={`p-2 md:p-2.5 rounded-full transition-all active:scale-95 ${showAddContact ? 'bg-[#0070F3] text-white shadow-lg shadow-blue-500/20' : 'hover:bg-white/10 text-zinc-400 hover:text-white'}`} 
+              title="Kişi Ara"
+            >
+              <Search size={20} />
+            </button>
+
             <button 
               onClick={() => {
                 setViewMode(viewMode === 'friends' ? 'chat' : 'friends');
                 if (viewMode !== 'friends') setActiveContact(null);
               }} 
-              className={`p-2 md:p-2.5 rounded-full transition-all active:scale-95 relative ${viewMode === 'friends' ? 'bg-[#0070F3] text-white shadow-lg shadow-blue-500/20' : 'hover:bg-white/10 hover:text-white'}`} 
+              className={`p-2 md:p-2.5 rounded-full transition-all active:scale-95 relative ${viewMode === 'friends' ? 'bg-[#0070F3] text-white shadow-lg shadow-blue-500/20' : 'hover:bg-white/10 text-zinc-400 hover:text-white'}`} 
               title="Arkadaşlar"
             >
               <Users size={20} />
@@ -1413,7 +1481,7 @@ function Dashboard({ session }: { session: any }) {
             
             <button 
               onClick={() => setShowSettings(true)} 
-              className="p-2 md:p-2.5 hover:bg-white/10 hover:text-white rounded-full transition-all active:scale-95" 
+              className="p-2 md:p-2.5 hover:bg-white/10 hover:text-white text-zinc-400 hover:text-white rounded-full transition-all active:scale-95" 
               title="Ayarlar"
             >
               <Settings size={20} />
@@ -1422,7 +1490,7 @@ function Dashboard({ session }: { session: any }) {
             <div className="relative">
               <button 
                 onClick={() => setShowSidebarMore(!showSidebarMore)} 
-                className={`p-2 md:p-2.5 rounded-full transition-all active:scale-95 ${showSidebarMore ? 'bg-white/10 text-white' : 'hover:bg-white/10 hover:text-white'}`} 
+                className={`p-2 md:p-2.5 rounded-full transition-all active:scale-95 ${showSidebarMore ? 'bg-white/10 text-white' : 'hover:bg-white/10 text-zinc-400 hover:text-white'}`} 
                 title="Daha Fazla"
               >
                 <MoreHorizontal size={20} />
@@ -1666,12 +1734,15 @@ function Dashboard({ session }: { session: any }) {
               </div>
             );
           }) : (
-            <div className="text-center text-sm text-zinc-500 py-16 px-6 flex flex-col items-center">
-              <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <UserPlus size={32} className="text-zinc-600" />
-              </div>
+            <div className="text-center text-sm text-zinc-500 py-16 px-6 flex flex-col items-center animate-in fade-in zoom-in-95 duration-700">
+              <button 
+                onClick={() => setShowAddContact(true)}
+                className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mb-6 shadow-inner hover:bg-zinc-800 transition-all active:scale-95 cursor-pointer group"
+              >
+                <UserPlus size={32} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+              </button>
               <p className="text-zinc-300 font-medium mb-2">Henüz kimseyle sohbet etmiyorsunuz.</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">Üstteki kişi ekle butonuna tıklayarak yeni bir sohbet başlatabilirsiniz.</p>
+              <p className="text-xs text-zinc-500 leading-relaxed">Yeni bir sohbet başlatmak için butona tıklayın.</p>
             </div>
           )}
         </div>
@@ -1683,9 +1754,9 @@ function Dashboard({ session }: { session: any }) {
         {viewMode === 'friends' ? (
           <div className="flex-1 flex flex-col overflow-hidden bg-zinc-900/30 backdrop-blur-xl">
             {/* Friends Manager Header */}
-            <div className="h-16 md:h-20 bg-white/5 backdrop-blur-md flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 z-10">
-              <button onClick={() => setViewMode('chat')} className="md:hidden mr-3 p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-95">
-                <ArrowLeft size={24} />
+            <div className="h-14 md:h-20 bg-white/5 backdrop-blur-md flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 z-40 pt-[env(safe-area-inset-top)] md:pt-0 relative">
+              <button onClick={() => setViewMode('chat')} className="md:hidden mr-2 p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-95">
+                <ArrowLeft size={22} />
               </button>
               <div className="w-11 h-11 rounded-full bg-[#0070F3]/20 flex items-center justify-center text-[#0070F3] shadow-lg shadow-blue-500/10 border border-blue-500/20">
                 <Users size={22} />
@@ -1819,7 +1890,7 @@ function Dashboard({ session }: { session: any }) {
                     <Search size={22} className="text-zinc-500" />
                     <input
                       type="text"
-                      placeholder="İsim veya e-posta ile insanları ara..."
+                      placeholder="E-posta ile insanları ara..."
                       className="w-full bg-transparent border-none focus:outline-none ml-4 text-zinc-100 placeholder-zinc-500"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -1885,9 +1956,9 @@ function Dashboard({ session }: { session: any }) {
         ) : activeContact ? (
           <>
             {/* Chat Header */}
-            <div className="h-16 md:h-20 bg-white/5 backdrop-blur-md flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 z-10">
-              <button onClick={() => setActiveContact(null)} className="md:hidden mr-3 p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-95">
-                <ArrowLeft size={24} />
+            <div className="h-14 md:h-20 bg-white/5 backdrop-blur-md flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 z-40 pt-[env(safe-area-inset-top)] md:pt-0 relative">
+              <button onClick={() => setActiveContact(null)} className="md:hidden mr-2 p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-95">
+                <ArrowLeft size={22} />
               </button>
               <div className="relative cursor-pointer" onClick={() => setShowContactInfo(true)}>
                 <img 
@@ -1945,7 +2016,10 @@ function Dashboard({ session }: { session: any }) {
                           <Eraser size={18} className="text-zinc-500" />
                           <span>Sohbeti Temizle</span>
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors">
+                        <button 
+                          onClick={() => { setShowMediaVault(true); setShowChatMenu(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                        >
                           <Eye size={18} className="text-zinc-500" />
                           <span>Medyaları Görüntüle</span>
                         </button>
@@ -1970,7 +2044,7 @@ function Dashboard({ session }: { session: any }) {
 
             {/* Chat Search Bar */}
             {showChatSearch && (
-              <div className="bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-10 animate-in slide-in-from-top-2 duration-200">
+              <div className="bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/50 px-4 py-3 z-30 animate-in slide-in-from-top-2 duration-200 relative">
                 <div className="relative bg-zinc-800/50 border border-zinc-700 rounded-full flex items-center px-4 py-2 shadow-inner">
                   <Search size={16} className="text-zinc-400" />
                   <input
@@ -1990,15 +2064,18 @@ function Dashboard({ session }: { session: any }) {
               </div>
             )}
 
+
+
+
             {/* Side Drawer (Contact Info) */}
             {showContactInfo && (
               <>
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] md:absolute" onClick={() => setShowContactInfo(false)} />
-                <div className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-[#050505] border-l border-zinc-800 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
-                  <div className="h-16 md:h-20 flex items-center justify-between px-6 border-b border-zinc-800/50 shrink-0">
+                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-sm bg-[#050505] border-l border-zinc-800 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
+                  <div className="h-14 md:h-20 flex items-center justify-between px-6 border-b border-zinc-800/50 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 relative">
                     <h3 className="text-lg font-semibold text-zinc-100">Kişi Bilgisi</h3>
                     <button onClick={() => setShowContactInfo(false)} className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-full transition-all active:scale-95">
-                      <X size={24} />
+                      <X size={22} />
                     </button>
                   </div>
                   
@@ -2056,6 +2133,181 @@ function Dashboard({ session }: { session: any }) {
               </>
             )}
 
+            {/* Media Vault Side Drawer */}
+            {showMediaVault && (
+              <>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] md:absolute" onClick={() => setShowMediaVault(false)} />
+                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-md bg-[#050505] border-l border-zinc-800 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
+                  <div className="h-14 md:h-20 flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 gap-3">
+                    <button onClick={() => setShowMediaVault(false)} className="md:hidden p-3 -ml-3 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 z-10">
+                      <ArrowLeft size={22} />
+                    </button>
+                    <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
+                        <Paperclip size={18} />
+                      </div>
+                      <h3 className="text-[16px] font-semibold text-zinc-100 truncate">Medya & Bağlantılar</h3>
+                    </div>
+                    <button onClick={() => setShowMediaVault(false)} className="hidden md:block p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-full transition-all active:scale-95">
+                      <X size={22} />
+                    </button>
+                  </div>
+
+                  <div className="flex border-b border-zinc-800/50 bg-white/2 px-2 shrink-0">
+                    {(['media', 'files', 'links'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setVaultTab(tab)}
+                        className={`flex-1 py-3.5 text-xs font-bold uppercase tracking-wider transition-all relative ${vaultTab === tab ? 'text-blue-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                        {tab === 'media' ? 'Medya' : tab === 'files' ? 'Dosyalar' : 'Bağlantılar'}
+                        {vaultTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400" />}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                    {vaultTab === 'media' && (
+                      <div className="grid grid-cols-3 gap-1">
+                        {messages.filter(m => m.file_url && (m.file_type === 'image' || m.file_type === 'video')).length === 0 ? (
+                          <div className="col-span-3 py-20 text-center text-zinc-600">
+                            <ImageIcon size={40} className="mx-auto mb-3 opacity-20" />
+                            <p className="text-sm">Henüz medya paylaşılmamış.</p>
+                          </div>
+                        ) : (
+                          messages.filter(m => m.file_url && (m.file_type === 'image' || m.file_type === 'video')).map((msg) => (
+                            <div 
+                              key={msg.id} 
+                              onClick={() => setSelectedMedia(msg)}
+                              className="aspect-square relative group cursor-pointer overflow-hidden bg-zinc-900 rounded-sm"
+                            >
+                              {msg.file_type === 'video' ? (
+                                <>
+                                  <video src={msg.file_url} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-all">
+                                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                      <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-white border-b-[5px] border-b-transparent translate-x-0.5" />
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <img src={msg.file_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
+                              )}
+                              <div className="absolute inset-0 ring-1 ring-inset ring-white/10 group-hover:ring-white/30 transition-all" />
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {vaultTab === 'files' && (
+                      <div className="p-3 space-y-2">
+                        {messages.filter(m => m.file_url && (m.file_type === 'audio' || m.file_type === 'other')).length === 0 ? (
+                          <div className="py-20 text-center text-zinc-600">
+                            <FileIcon size={40} className="mx-auto mb-3 opacity-20" />
+                            <p className="text-sm">Henüz dosya paylaşılmamış.</p>
+                          </div>
+                        ) : (
+                          messages.filter(m => m.file_url && (m.file_type === 'audio' || m.file_type === 'other')).map((msg) => (
+                            <div key={msg.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-zinc-800/50 hover:bg-white/10 transition-colors group">
+                              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
+                                {msg.file_type === 'audio' ? <Mic size={20} /> : <FileIcon size={20} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-zinc-200 truncate">
+                                  {msg.file_type === 'audio' ? 'Sesli Mesaj' : 'Dosya Ekini'}
+                                </p>
+                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">
+                                  {new Date(msg.created_at).toLocaleDateString()} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                              <a href={msg.file_url} target="_blank" rel="noreferrer" className="p-2 text-zinc-500 hover:text-blue-400 transition-colors">
+                                <ExternalLink size={18} />
+                              </a>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {vaultTab === 'links' && (
+                      <div className="p-3 space-y-2">
+                        {messages.filter(m => m.content && m.content.match(/https?:\/\/[^\s]+/g)).length === 0 ? (
+                          <div className="py-20 text-center text-zinc-600">
+                            <Globe size={40} className="mx-auto mb-3 opacity-20" />
+                            <p className="text-sm">Henüz bağlantı paylaşılmamış.</p>
+                          </div>
+                        ) : (
+                          messages.filter(m => m.content && m.content.match(/https?:\/\/[^\s]+/g)).map((msg) => {
+                            const links = msg.content.match(/https?:\/\/[^\s]+/g);
+                            return links?.map((link, idx) => (
+                              <a key={`${msg.id}-${idx}`} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-4 p-4 bg-white/2 hover:bg-white/5 rounded-2xl border border-zinc-800/50 transition-all group">
+                                <div className="w-10 h-10 shrink-0 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                  <LinkIcon size={20} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] text-zinc-300 truncate font-medium group-hover:text-blue-400 transition-colors">{link}</p>
+                                  <p className="text-[10px] text-zinc-500 mt-0.5">Paylaşan: {msg.sender_id === currentUser.id ? 'Siz' : (activeContact.full_name || activeContact.email)}</p>
+                                </div>
+                                <ChevronRight size={16} className="text-zinc-600 group-hover:text-zinc-400 transform group-hover:translate-x-1 transition-all" />
+                              </a>
+                            ));
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Media Lightbox */}
+            {selectedMedia && (
+              <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between p-4 md:p-6 z-10 shrink-0">
+                  <div className="flex flex-col">
+                    <p className="text-white font-semibold">{activeContact.full_name || activeContact.email}</p>
+                    <p className="text-zinc-500 text-xs">
+                      {new Date(selectedMedia.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={selectedMedia.file_url} 
+                      download 
+                      className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-95"
+                      title="İndir"
+                    >
+                      <Download size={20} />
+                    </a>
+                    <button 
+                      onClick={() => setSelectedMedia(null)}
+                      className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-95"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-hidden">
+                  {selectedMedia.file_type === 'video' ? (
+                    <video 
+                      src={selectedMedia.file_url} 
+                      controls 
+                      autoPlay 
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+                    />
+                  ) : (
+                    <img 
+                      src={selectedMedia.file_url} 
+                      className="max-w-full max-h-full object-contain shadow-2xl" 
+                      alt="" 
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Chat Background Pattern */}
             <div className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none" 
                  style={{ backgroundImage: `radial-gradient(circle at center, #ffffff 1px, transparent 1px)`, backgroundSize: '24px 24px' }}>
@@ -2088,60 +2340,66 @@ function Dashboard({ session }: { session: any }) {
                   const isMe = msg.sender_id === currentUser.id;
                   const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   return (
-                    <div key={msg.id} className={`flex w-full group animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%] relative`}>
-                        <div className={`relative px-4 py-2.5 shadow-xl transition-all duration-200 ${isMe ? 'bg-gradient-to-br from-[#0070F3] to-blue-600 text-white rounded-2xl rounded-tr-sm' : 'bg-zinc-800 text-zinc-100 rounded-2xl rounded-tl-sm border border-zinc-700/50'}`}>
-                          {/* Reaction Button & Menu */}
-                          <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all z-30 ${isMe ? '-left-28' : '-right-12'}`}>
-                            <div className="relative">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveEmojiPicker(activeEmojiPicker === msg.id ? null : msg.id);
-                                }}
-                                className="p-2 rounded-full bg-white/10 text-zinc-400 hover:text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
-                                title="Tepki Ver"
-                              >
-                                <span className="text-lg leading-none">+</span>
-                              </button>
-                              
-                              {activeEmojiPicker === msg.id && (
-                                <div className={`absolute bottom-full mb-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded-full shadow-2xl flex gap-1 z-50 animate-in fade-in zoom-in-95 duration-200 ${isMe ? 'left-0' : 'right-0'}`}>
-                                  {POPULAR_EMOJIS.map(emoji => (
-                                    <button
-                                      key={emoji}
-                                      onClick={() => toggleReaction(msg.id, emoji)}
-                                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-all active:scale-125 text-lg"
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                    <div key={msg.id} id={`msg-${msg.id}`} className={`flex w-full group animate-in fade-in slide-in-from-bottom-2 duration-300 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[82%] md:max-w-[70%] relative`}>
+                        <div className={`relative px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-xl transition-all duration-200 ${isMe ? 'bg-gradient-to-br from-[#0070F3] to-blue-600 text-white rounded-2xl rounded-tr-sm' : 'bg-zinc-800 text-zinc-100 rounded-2xl rounded-tl-sm border border-zinc-700/50'}`}>
+                          {/* Message Actions Dropdown Trigger */}
+                          <div className={`absolute top-0 flex items-center transition-all z-30 ${isMe ? '-left-8' : '-right-8'}`}>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMessageActionsId(activeMessageActionsId === msg.id ? null : msg.id);
+                              }}
+                              className="p-1 text-zinc-500 hover:text-white transition-colors"
+                            >
+                              <ChevronDown size={18} className={`transition-transform duration-200 ${activeMessageActionsId === msg.id ? 'rotate-180' : ''}`} />
+                            </button>
 
-                            {isMe && (
+                            {activeMessageActionsId === msg.id && (
                               <>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditing(msg);
-                                  }}
-                                  className="p-2 rounded-full bg-white/10 text-zinc-400 hover:text-blue-400 hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
-                                  title="Mesajı Düzenle"
-                                >
-                                  <Pencil size={16} />
-                                </button>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setMessageToDelete(msg.id);
-                                  }}
-                                  className="p-2 rounded-full bg-white/10 text-zinc-400 hover:text-red-400 hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
-                                  title="Mesajı Sil"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
+                                <div className="fixed inset-0 z-40" onClick={() => setActiveMessageActionsId(null)} />
+                                <div className={`absolute top-full mt-1 w-48 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 ${isMe ? 'right-0' : 'left-0'}`}>
+                                  {/* Emoji Quick reactions */}
+                                  <div className="flex items-center justify-between px-2 py-2 border-b border-zinc-800 bg-white/5">
+                                    {POPULAR_EMOJIS.map(emoji => (
+                                      <button
+                                        key={emoji}
+                                        onClick={() => { toggleReaction(msg.id, emoji); setActiveMessageActionsId(null); }}
+                                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-all active:scale-125 text-base"
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  
+                                  <div className="py-1">
+                                    <button 
+                                      onClick={() => { setReplyToMessage(msg); setActiveMessageActionsId(null); }}
+                                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                                    >
+                                      <CornerUpLeft size={16} className="text-blue-400" />
+                                      <span>Yanıtla</span>
+                                    </button>
+                                    {isMe && (
+                                      <>
+                                        <button 
+                                          onClick={() => { startEditing(msg); setActiveMessageActionsId(null); }}
+                                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                                        >
+                                          <Pencil size={16} className="text-zinc-500" />
+                                          <span>Düzenle</span>
+                                        </button>
+                                        <button 
+                                          onClick={() => { setMessageToDelete(msg.id); setActiveMessageActionsId(null); }}
+                                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                        >
+                                          <Trash2 size={16} />
+                                          <span>Sil</span>
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                               </>
                             )}
                           </div>
@@ -2159,7 +2417,36 @@ function Dashboard({ session }: { session: any }) {
                           )}
                           {msg.content && (
                             <div className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
-                              {msg.content}
+                              {(() => {
+                                try {
+                                  if (msg.content.startsWith('{"reply_to":')) {
+                                    const parsed = JSON.parse(msg.content);
+                                    const quoted = messages.find(m => m.id === parsed.reply_to);
+                                    return (
+                                      <div className="flex flex-col gap-1.5 mb-2">
+                                        <div 
+                                          className={`border-l-2 py-1 px-3 bg-black/10 rounded-r-lg max-w-full cursor-pointer hover:bg-black/20 transition-colors ${isMe ? 'border-white/40' : 'border-zinc-500/40'}`}
+                                          onClick={() => {
+                                            const el = document.getElementById(`msg-${parsed.reply_to}`);
+                                            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            el?.classList.add('animate-pulse-blue');
+                                            setTimeout(() => el?.classList.remove('animate-pulse-blue'), 2000);
+                                          }}
+                                        >
+                                          <p className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">
+                                            {quoted?.sender_id === currentUser.id ? 'Siz' : 'Yanıtlanan'}
+                                          </p>
+                                          <p className="text-[11px] opacity-60 truncate italic">
+                                            {quoted ? (quoted.file_url ? (quoted.file_type === 'video' ? '🎥 Video' : quoted.file_type === 'audio' ? '🎵 Sesli' : '📷 Foto') : quoted.content) : 'Mesaj silinmiş'}
+                                          </p>
+                                        </div>
+                                        <span>{parsed.content}</span>
+                                      </div>
+                                    );
+                                  }
+                                } catch (e) {}
+                                return msg.content;
+                              })()}
                               {msg.updated_at && msg.updated_at !== msg.created_at && (
                                 <span className="text-[10px] opacity-60 ml-1.5 italic">(düzenlendi)</span>
                               )}
@@ -2202,7 +2489,7 @@ function Dashboard({ session }: { session: any }) {
                         <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                           <span className="text-[11px] font-medium text-zinc-500">{timeStr}</span>
                           {isMe && (
-                            <span className={msg.status === 'read' ? 'text-[#0070F3]' : 'text-zinc-500'}>
+                            <span className={`transition-all duration-500 ${msg.status === 'read' ? 'text-[#0070F3] scale-110' : 'text-zinc-500 scale-100'} animate-in fade-in zoom-in duration-300`}>
                               {msg.status === 'sent' ? <Check size={14} /> : <CheckCheck size={14} />}
                             </span>
                           )}
@@ -2211,6 +2498,16 @@ function Dashboard({ session }: { session: any }) {
                     </div>
                   );
                 })
+              )}
+              {/* Typing Indicator Bubble */}
+              {isTyping && (
+                <div className="flex justify-start animate-in fade-in slide-in-from-left-2 duration-300 mb-2">
+                  <div className="bg-zinc-800/50 backdrop-blur-sm border border-zinc-700/50 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1.5 shadow-lg">
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
+                  </div>
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -2241,6 +2538,32 @@ function Dashboard({ session }: { session: any }) {
                 </div>
               ) : (
                 <>
+                  {/* Quoted Message Preview */}
+                  {replyToMessage && (
+                    <div className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800/50 rounded-2xl p-3 flex items-start gap-4 mb-2 animate-in slide-in-from-bottom-2 duration-200 relative overflow-hidden group shadow-xl mx-0 md:mx-0">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0070F3]" />
+                      <div className="flex-1 min-w-0 ml-1">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[10px] font-bold text-[#0070F3] uppercase tracking-wider">
+                            {replyToMessage.sender_id === currentUser.id ? "Siz" : (contacts.find(c => c.id === replyToMessage.sender_id)?.full_name || "Yanıtlanan")}
+                          </span>
+                          <button 
+                            onClick={() => setReplyToMessage(null)}
+                            className="p-1 text-zinc-500 hover:text-white hover:bg-white/5 rounded-full transition-colors"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <p className="text-xs text-zinc-400 truncate leading-relaxed">
+                          {replyToMessage.file_url ? (
+                            replyToMessage.file_type === 'video' ? '🎥 Video' : 
+                            replyToMessage.file_type === 'audio' ? '🎵 Sesli Mesaj' : '📷 Fotoğraf'
+                          ) : replyToMessage.content}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {editingMessage && (
                     <div className="flex items-center justify-between bg-blue-500/10 border-l-4 border-blue-500 px-4 py-2 rounded-r-xl mb-1 animate-in slide-in-from-bottom-2">
                       <div className="flex items-center gap-2">
@@ -2381,7 +2704,7 @@ export default function App() {
   }
 
   return (
-    <div className="pt-10 min-h-screen bg-[#050505]">
+    <div className="h-[100dvh] bg-[#050505] overflow-hidden">
       <BetaBanner onReportClick={() => setIsReportModalOpen(true)} />
       <ReportModal 
         isOpen={isReportModalOpen} 
@@ -2389,11 +2712,13 @@ export default function App() {
         userId={session?.user?.id}
       />
       
-      {showLanding ? (
-        <Landing session={session} onStart={() => setShowLanding(false)} />
-      ) : (
-        session ? <Dashboard session={session} /> : <Auth />
-      )}
+      <div className="pt-[calc(3.5rem+env(safe-area-inset-top))] md:pt-[calc(2.5rem+env(safe-area-inset-top))] h-full flex flex-col overflow-hidden">
+        {showLanding ? (
+          <Landing session={session} onStart={() => setShowLanding(false)} />
+        ) : (
+          session ? <Dashboard session={session} /> : <Auth />
+        )}
+      </div>
     </div>
   );
 }
