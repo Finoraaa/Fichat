@@ -1,10 +1,9 @@
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-const genAI = new GoogleGenerativeAI(API_KEY);
-
-export const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// New SDK client initialization
+const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
 export async function generateWolfResponse(userMessage: string, chatHistory: { role: 'user' | 'model', parts: { text: string }[] }[] = []) {
   if (!API_KEY) {
@@ -12,8 +11,10 @@ export async function generateWolfResponse(userMessage: string, chatHistory: { r
   }
 
   try {
-    const chat = model.startChat({
-      history: [
+    // New SDK chat format
+    const result = await genAI.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: [
         {
           role: "user",
           parts: [{ text: "Sen WolfAI'sın, Fichat uygulamasının akıllı asistanısın. Yardımsever, zeki ve hafif gizemli bir kurt gibi davranmalısın. Cevapların kısa, öz ve etkileyici olsun. Türkçe konuş." }],
@@ -22,13 +23,15 @@ export async function generateWolfResponse(userMessage: string, chatHistory: { r
           role: "model",
           parts: [{ text: "Anlaşıldı. Ben WolfAI. Fichat'in gölgelerinden sana rehberlik etmek için buradayım. Nasıl yardımcı olabilirim?" }],
         },
-        ...chatHistory
+        ...chatHistory,
+        {
+          role: 'user',
+          parts: [{ text: userMessage }]
+        }
       ],
     });
 
-    const result = await chat.sendMessage(userMessage);
-    const response = await result.response;
-    return response.text();
+    return result.text;
   } catch (error) {
     console.error("Gemini Error:", error);
     return "🐺 Üzgünüm, şu an bağlantı kuramıyorum. Lütfen API anahtarını kontrol et.";
@@ -48,17 +51,25 @@ export async function transcribeAudio(audioUrl: string) {
       new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
     );
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: "audio/webm",
-          data: base64Audio,
-        },
-      },
-      { text: "Lütfen bu sesli mesajı tam olarak yazıya dök. Sadece transkripti döndür, başka açıklama ekleme." },
-    ]);
+    const result = await genAI.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              inlineData: {
+                mimeType: "audio/webm",
+                data: base64Audio,
+              },
+            },
+            { text: "Lütfen bu sesli mesajı tam olarak yazıya dök. Sadece transkripti döndür, başka açıklama ekleme." },
+          ]
+        }
+      ]
+    });
 
-    return result.response.text();
+    return result.text;
   } catch (error) {
     console.error("Transcription Error:", error);
     throw error;
