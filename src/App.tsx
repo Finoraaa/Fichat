@@ -1413,8 +1413,8 @@ function Dashboard({ session }: { session: any }) {
       {/* MESSAGE DELETE CONFIRMATION MODAL */}
       {messageToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setMessageToDelete(null)}></div>
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-sm rounded-[32px] p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setMessageToDelete(null)}></div>
+          <div className="bg-white/5 backdrop-blur-3xl border border-white/10 w-full max-w-sm rounded-[32px] p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 text-red-500">
                 <Trash2 size={32} />
@@ -1441,10 +1441,10 @@ function Dashboard({ session }: { session: any }) {
       )}
 
       {/* LEFT SIDEBAR */}
-      <div className={`w-full md:w-[380px] lg:w-[420px] flex-col bg-white/5 backdrop-blur-md border-r border-zinc-800/50 z-10 transition-all duration-300 ${activeContact || viewMode === 'friends' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[380px] lg:w-[420px] flex-col bg-white/[0.03] backdrop-blur-3xl border-r border-white/10 z-10 transition-all duration-300 ${activeContact || viewMode === 'friends' ? 'hidden md:flex' : 'flex'}`}>
         
         {/* Sidebar Header */}
-        <div className="h-14 md:h-20 flex items-center justify-between px-4 md:px-6 border-b border-zinc-800/50 shrink-0 pt-[env(safe-area-inset-top)] md:pt-0 pb-[0.5rem] md:pb-0">
+        <div className="h-14 md:h-20 flex items-center justify-between px-4 md:px-6 border-b border-white/5 shrink-0 pt-[env(safe-area-inset-top)] md:pt-0 pb-[0.5rem] md:pb-0 bg-white/2 backdrop-blur-md">
           <div 
             className="flex items-center gap-3 md:gap-4 cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-2xl transition-all active:scale-95"
             onClick={() => setShowProfileModal(true)}
@@ -1749,7 +1749,7 @@ function Dashboard({ session }: { session: any }) {
       </div>
 
       {/* RIGHT CHAT AREA */}
-      <div className={`flex-1 flex-col relative ${activeContact || viewMode === 'friends' ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 flex flex-col relative bg-white/[0.01] backdrop-blur-[2px] transition-all duration-500 ${activeContact || viewMode === 'friends' ? 'flex' : 'hidden md:flex'}`}>
         
         {viewMode === 'friends' ? (
           <div className="flex-1 flex flex-col overflow-hidden bg-zinc-900/30 backdrop-blur-xl">
@@ -1956,7 +1956,7 @@ function Dashboard({ session }: { session: any }) {
         ) : activeContact ? (
           <>
             {/* Chat Header */}
-            <div className="h-14 md:h-20 bg-white/5 backdrop-blur-md flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 z-40 pt-[env(safe-area-inset-top)] md:pt-0 relative">
+            <div className="h-14 md:h-20 bg-white/[0.03] backdrop-blur-3xl flex items-center px-4 md:px-6 border-b border-white/5 shrink-0 z-40 pt-[env(safe-area-inset-top)] md:pt-0 relative">
               <button onClick={() => setActiveContact(null)} className="md:hidden mr-2 p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-colors active:scale-95">
                 <ArrowLeft size={22} />
               </button>
@@ -2071,8 +2071,8 @@ function Dashboard({ session }: { session: any }) {
             {showContactInfo && (
               <>
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] md:absolute" onClick={() => setShowContactInfo(false)} />
-                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-sm bg-[#050505] border-l border-zinc-800 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
-                  <div className="h-14 md:h-20 flex items-center justify-between px-6 border-b border-zinc-800/50 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 relative">
+                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-sm bg-white/5 backdrop-blur-3xl border-l border-white/10 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
+                  <div className="h-14 md:h-20 flex items-center justify-between px-6 border-b border-white/5 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 relative bg-white/5">
                     <h3 className="text-lg font-semibold text-zinc-100">Kişi Bilgisi</h3>
                     <button onClick={() => setShowContactInfo(false)} className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-full transition-all active:scale-95">
                       <X size={22} />
@@ -2137,8 +2137,8 @@ function Dashboard({ session }: { session: any }) {
             {showMediaVault && (
               <>
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] md:absolute" onClick={() => setShowMediaVault(false)} />
-                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-md bg-[#050505] border-l border-zinc-800 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
-                  <div className="h-14 md:h-20 flex items-center px-4 md:px-6 border-b border-zinc-800/50 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 gap-3">
+                <div className="fixed top-0 right-0 bottom-0 w-full md:max-w-md bg-white/5 backdrop-blur-3xl border-l border-white/10 shadow-2xl z-[70] md:absolute animate-in slide-in-from-right duration-300 flex flex-col">
+                  <div className="h-14 md:h-20 flex items-center px-4 md:px-6 border-b border-white/5 shrink-0 pt-[calc(2.5rem+env(safe-area-inset-top))] md:pt-0 gap-3 bg-white/5">
                     <button onClick={() => setShowMediaVault(false)} className="md:hidden p-3 -ml-3 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all active:scale-95 z-10">
                       <ArrowLeft size={22} />
                     </button>
@@ -2704,7 +2704,14 @@ export default function App() {
   }
 
   return (
-    <div className="h-[100dvh] bg-[#050505] overflow-hidden">
+    <div className="h-[100dvh] bg-[#050505] overflow-hidden relative">
+      {/* Dynamic Aurora Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-blob" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[100px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-blue-500/10 rounded-full blur-[110px] animate-blob animation-delay-4000" />
+      </div>
+
       <BetaBanner onReportClick={() => setIsReportModalOpen(true)} />
       <ReportModal 
         isOpen={isReportModalOpen} 
