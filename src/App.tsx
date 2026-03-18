@@ -1,8 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
+console.log('APP.TSX: TOP LEVEL');
 import { Search, MoreVertical, MessageSquare, ArrowLeft, Send, UserPlus, Check, CheckCheck, LogOut, User, X, Camera, Paperclip, Loader2, Instagram, Github, Globe, Settings, Volume2, Trash2, Pencil, Mic, Square, Play, Pause, Bell, UserCheck, UserX, Users, UserMinus, ShieldAlert, Eye, VolumeX, Eraser, MoreHorizontal, Info, AlertCircle, Image as ImageIcon, FileText as FileIcon, ExternalLink, ChevronRight, Download, Link as LinkIcon, ChevronDown, CornerUpLeft } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { generateWolfResponse, transcribeAudio } from './lib/gemini';
 import { BetaBanner } from './components/BetaBanner';
 import { ReportModal } from './components/ReportModal';
+
+const WOLF_AI_ID = 'wolf-ai-system-assistant';
+const WOLF_AI_PROFILE = {
+  id: WOLF_AI_ID,
+  full_name: 'WolfAI Asistan 🐺',
+  email: 'wolfai@fichat.io',
+  avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=wolf-ai&backgroundColor=0070F3',
+  is_online: true,
+  last_seen: new Date().toISOString(),
+  bio: 'Fichat\'in akıllı asistanıyım. Karanlıkta sana rehberlik edebilirim.'
+};
 
 const SOUND_OPTIONS = [
   { id: 'default', name: 'Varsayılan (Modern)', url: 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3' },
@@ -17,6 +30,8 @@ function VoiceMessage({ url }: { url: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [transcription, setTranscription] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Pseudo-random but deterministic waveform data
@@ -102,6 +117,37 @@ function VoiceMessage({ url }: { url: string }) {
           <span className="text-zinc-500">{formatTime(duration)}</span>
         </div>
       </div>
+
+      {/* Transcription Button */}
+      <button 
+        onClick={async () => {
+          if (isTranscribing) return;
+          setIsTranscribing(true);
+          try {
+            const text = await transcribeAudio(url);
+            setTranscription(text);
+          } catch (err) {
+            console.error(err);
+            alert('Yazıya dökme hatası.');
+          } finally {
+            setIsTranscribing(false);
+          }
+        }}
+        className="shrink-0 p-2 text-zinc-500 hover:text-blue-400 transition-colors"
+        title="Yazıya Dök"
+      >
+        {isTranscribing ? <Loader2 size={16} className="animate-spin" /> : <FileIcon size={16} />}
+      </button>
+
+      {transcription && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-white/5 backdrop-blur-md border border-white/5 rounded-2xl text-[11px] text-zinc-300 animate-in slide-in-from-top-1">
+          <div className="flex items-center gap-1.5 mb-1 text-blue-400 font-bold uppercase tracking-wider text-[9px]">
+            <FileIcon size={10} />
+            Yazı:
+          </div>
+          {transcription}
+        </div>
+      )}
     </div>
   );
 }
@@ -378,6 +424,9 @@ function Dashboard({ session }: { session: any }) {
   
   // State
   const [contacts, setContacts] = useState<any[]>([]);
+  
+  // Inject WolfAI into contacts
+  const allContacts = [WOLF_AI_PROFILE, ...contacts];
   const [activeContact, setActiveContact] = useState<any>(() => {
     const saved = localStorage.getItem(`activeContact_${session.user.id}`);
     return saved ? JSON.parse(saved) : null;
@@ -1027,6 +1076,35 @@ function Dashboard({ session }: { session: any }) {
         const { error } = await supabase.from('messages').insert([msgData]);
         if (error) throw error;
         setReplyToMessage(null);
+
+        // --- WOLF AI RESPONSE LOGIC ---
+        if (activeContact.id === WOLF_AI_ID) {
+          setIsTyping(true);
+          try {
+            // Get last few messages for context
+            const history = messages.slice(-5).map(m => ({
+              role: m.sender_id === currentUser.id ? 'user' as const : 'model' as const,
+              parts: [{ text: m.content }]
+            }));
+
+            const responseText = await generateWolfResponse(content, history);
+            
+            // Artificial delay for realism
+            setTimeout(async () => {
+              const aiMsgData = {
+                sender_id: WOLF_AI_ID,
+                receiver_id: currentUser.id,
+                content: responseText
+              };
+              await supabase.from('messages').insert([aiMsgData]);
+              setIsTyping(false);
+              playNotificationSound();
+            }, 1500);
+          } catch (err) {
+            console.error("AI Error:", err);
+            setIsTyping(false);
+          }
+        }
       }
     } catch (err) {
       console.error("Mesaj gönderilirken/güncellenirken hata oluştu:", err);
@@ -1704,7 +1782,7 @@ function Dashboard({ session }: { session: any }) {
 
         {/* Contacts List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-          {contacts.length > 0 ? contacts.map((contact) => {
+          {allContacts.length > 0 ? allContacts.map((contact) => {
             const timeStr = contact.lastMessageTime ? new Date(contact.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
             return (
               <div
@@ -1794,7 +1872,7 @@ function Dashboard({ session }: { session: any }) {
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
               {friendsTab === 'myFriends' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {contacts.length > 0 ? contacts.map((friend) => (
+                  {allContacts.length > 0 ? allContacts.map((friend) => (
                     <div key={friend.id} className="bg-white/5 border border-zinc-800/50 rounded-3xl p-4 flex items-center justify-between group hover:bg-white/[0.07] transition-all hover:border-zinc-700/50">
                       <div className="flex items-center gap-4">
                         <div className="relative">
